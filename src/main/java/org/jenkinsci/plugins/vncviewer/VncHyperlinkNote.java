@@ -9,7 +9,7 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,16 +28,14 @@ import hudson.console.HyperlinkNote;
 
 public class VncHyperlinkNote extends HyperlinkNote {
 
-	private static final long serialVersionUID = 1951864374194045781L;
+    private static final long serialVersionUID = 1951864374194045781L;
 
-	public VncHyperlinkNote(String url, int length)
-	{
-		super(url, length);
-	}
+    public VncHyperlinkNote(String url, int length) {
+        super(url, length);
+    }
 
-	@Override
-	protected String extraAttributes() {
-		return "target=\"_blank\"";
-	}
-
+    @Override
+    protected String extraAttributes() {
+        return "target=\"_blank\"";
+    }
 }
