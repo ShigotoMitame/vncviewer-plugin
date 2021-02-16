@@ -25,16 +25,9 @@
 package org.jenkinsci.plugins.vncviewer;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.Extension;
-import hudson.Launcher;
+import hudson.*;
 import hudson.Launcher.LocalLauncher;
-import hudson.Proc;
-import hudson.Util;
-import hudson.model.AbstractBuild;
-import hudson.model.AbstractProject;
-import hudson.model.BuildListener;
-import hudson.model.Hudson;
-import hudson.model.Item;
+import hudson.model.*;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
 import hudson.util.FormValidation;
@@ -48,6 +41,7 @@ import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
 import jenkins.model.Jenkins;
+import jenkins.tasks.SimpleBuildWrapper;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.tools.tar.TarEntry;
@@ -57,7 +51,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 
-public class VncViewerBuildWrapper extends BuildWrapper {
+public class VncViewerBuildWrapper extends SimpleBuildWrapper {
 
     private String vncServ;
 
@@ -79,10 +73,13 @@ public class VncViewerBuildWrapper extends BuildWrapper {
         value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
         justification = "avoid false posititive"
     )
-    public Environment setUp(
-        @SuppressWarnings("rawtypes") AbstractBuild build,
+    public void setUp(
+        Context context,
+        Run<?, ?> build,
+        FilePath workspace,
         Launcher launcher,
-        final BuildListener listener
+        TaskListener listener,
+        EnvVars initialEnvironment
     ) throws IOException, InterruptedException {
         DescriptorImpl DESCRIPTOR = Hudson
             .getInstance()
@@ -164,26 +161,28 @@ public class VncViewerBuildWrapper extends BuildWrapper {
         listener.annotate(new ConsoleNoteButton(txt, url));
         listener.getLogger().print("\n\n");
         final Proc noVncProcFinal = noVncProc;
-        return new Environment() {
-            @Override
-            @SuppressFBWarnings(
-                value = "DE_MIGHT_IGNORE",
-                justification = "ignore Exceptions on teardown"
-            )
-            public boolean tearDown(AbstractBuild build, BuildListener listener)
-                throws IOException, InterruptedException {
-                try {
-                    noVncProcFinal.getStderr().close();
-                } catch (Exception e) {}
-                try {
-                    noVncProcFinal.getStdout().close();
-                } catch (Exception e) {}
-                try {
-                    noVncProcFinal.kill();
-                } catch (Exception e) {}
-                return true;
+        // TODO: fix bug with disposer
+        context.setDisposer(
+            new Disposer() {
+                @Override
+                public void tearDown(
+                    Run<?, ?> run,
+                    FilePath filePath,
+                    Launcher launcher,
+                    TaskListener taskListener
+                ) throws IOException, InterruptedException {
+                    try {
+                        noVncProcFinal.getStderr().close();
+                    } catch (Exception e) {}
+                    try {
+                        noVncProcFinal.getStdout().close();
+                    } catch (Exception e) {}
+                    try {
+                        noVncProcFinal.kill();
+                    } catch (Exception e) {}
+                }
             }
-        };
+        );
     }
 
     public static int findFreePort() {
